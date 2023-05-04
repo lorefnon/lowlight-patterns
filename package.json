@@ -91,6 +91,17 @@
                     "scope": "window",
                     "description": "Actual opacity value for max opacity rules"
                 },
+                "lowlight-patterns.opacity": {
+                    "type": "string",
+                    "scope": "window",
+                    "enum": [
+                        "min",
+                        "mid",
+                        "max"
+                    ],
+                    "default": "mid",
+                    "description": "Actual opacity value for max opacity rules"
+                },
                 "lowlight-patterns.maxNumberOfLinesToScan": {
                     "type": "number",
                     "default": 1000,

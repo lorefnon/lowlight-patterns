@@ -3,7 +3,7 @@
         "lowlight-patterns.rules": [
             {
                 "startRule": ".*\\$schema.*",
-                "endRule": "",
+                "endRule": "}",
                 "opacity": "max"
             }
         ]
@@ -16,6 +16,13 @@
             }
         ]
     },
-    "lowlight-patterns.opacity": 0.3,
+    "lowlight-patterns.rules": [
+        {
+            "rule": "err != nil",
+            "opacity": "mid"
+        }
+    ],
+    "lowlight-patterns.opacity": "mid",
+    "lowlight-patterns.midOpacity": 0.5,
     "lowlight-patterns.maxNumberOfLinesToScan": 1000
 }
