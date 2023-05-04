@@ -1,74 +1,137 @@
 {
-	"name": "lowlight-patterns",
-	"displayName": "Lowlight Patterns",
-	"description": "Reduce visibility of unimportant parts of code identified by custom patterns",
-	"publisher": "lorefnon",
-	"version": "0.0.1",
-	"engines": {
-		"vscode": "^1.74.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"keywords": [
-		"light",
-		"code reading"
-	],
-	"activationEvents": [
-		"onStartupFinished"
-	],
-	"main": "./out/extension.js",
-	"contributes": {
-		"configuration": {
-			"title": "Lowlight Patterns",
-			"properties": {
-				"lowlight-patterns.rules": {
-					"type": "array",
-					"default": [],
-					"scope": "window",
-					"description": "regex for patterns to lowlight"
-				},
-				"lowlight-patterns.opacity": {
-					"type": "number",
-					"default": 0.1,
-					"scope": "window",
-					"description": "lowlight opacity"
-				}
-			}
-		}
-	},
-	"scripts": {
-		"package": "vsce package --yarn",
-		"publish": "vsce publish",
-		"vscode:prepublish": "yarn run compile",
-		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./",
-		"pretest": "yarn run compile && yarn run lint",
-		"test": "node ./out/test/runTest.js"
-	},
-	"devDependencies": {
-		"@types/glob": "^8.0.0",
-		"@types/lodash": "^4.14.191",
-		"@types/node": "^18.11.18",
-		"@types/vscode": "^1.74.0",
-		"@vscode/vsce": "^2.7.0",
-		"glob": "^8.0.3",
-		"typescript": "^4.9.4",
-		"vscode-test": "^1.3.0"
-	},
-	"icon": "media/icon.png",
-	"bugs": {
-		"url": "https://github.com/lorefnon/lowlight-patterns/issues",
-		"email": "lorefnon@tutanota.com"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/lorefnon/lowlight-patterns"
-	},
-	"homepage": "https://github.com/lorefnon/lowlight-patterns",
-	"dependencies": {
-		"lodash": "^4.17.21",
-		"memoize-one": "^6.0.0",
-		"zod": "^3.20.2"
-	}
+    "name": "lowlight-patterns",
+    "displayName": "Lowlight Patterns",
+    "description": "Reduce visibility of unimportant parts of code identified by custom patterns",
+    "publisher": "lorefnon",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.74.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "keywords": [
+        "light",
+        "code reading"
+    ],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "configuration": {
+            "title": "Lowlight Patterns",
+            "properties": {
+                "lowlight-patterns.rules": {
+                    "default": [],
+                    "scope": "language-overridable",
+                    "description": "regex for patterns to lowlight",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "oneOf": [
+                            {
+                                "properties": {
+                                    "startRule": {
+                                        "type": "string"
+                                    },
+                                    "endRule": {
+                                        "type": "string"
+                                    },
+                                    "opacity": {
+                                        "type": "string",
+                                        "enum": [
+                                            "min",
+                                            "mid",
+                                            "max"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "startRule",
+                                    "endRule"
+                                ]
+                            },
+                            {
+                                "properties": {
+                                    "rule": {
+                                        "type": "string"
+                                    },
+                                    "opacity": {
+                                        "type": "string",
+                                        "enum": [
+                                            "min",
+                                            "mid",
+                                            "max"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "rule"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "lowlight-patterns.minOpacity": {
+                    "type": "number",
+                    "default": 0.25,
+                    "scope": "window",
+                    "description": "Actual opacity value for min opacity rules"
+                },
+                "lowlight-patterns.midOpacity": {
+                    "type": "number",
+                    "default": 0.5,
+                    "scope": "window",
+                    "description": "Actual opacity value for mid opacity rules"
+                },
+                "lowlight-patterns.maxOpacity": {
+                    "type": "number",
+                    "default": 0.75,
+                    "scope": "window",
+                    "description": "Actual opacity value for max opacity rules"
+                },
+                "lowlight-patterns.maxNumberOfLinesToScan": {
+                    "type": "number",
+                    "default": 1000,
+                    "scope": "language-overridable",
+                    "description": "Only the first n lines will be searched for matches. Exceeding will be ignored."
+                }
+            }
+        }
+    },
+    "scripts": {
+        "package": "vsce package --yarn",
+        "publish": "vsce publish",
+        "vscode:prepublish": "yarn run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "yarn run compile && yarn run lint",
+        "test": "node ./out/test/runTest.js"
+    },
+    "devDependencies": {
+        "@types/glob": "^8.0.0",
+        "@types/lodash": "^4.14.191",
+        "@types/node": "^18.11.18",
+        "@types/vscode": "^1.74.0",
+        "@vscode/vsce": "^2.7.0",
+        "glob": "^8.0.3",
+        "typescript": "^4.9.4",
+        "vscode-test": "^1.3.0"
+    },
+    "icon": "media/icon.png",
+    "bugs": {
+        "url": "https://github.com/lorefnon/lowlight-patterns/issues",
+        "email": "lorefnon@tutanota.com"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/lorefnon/lowlight-patterns"
+    },
+    "homepage": "https://github.com/lorefnon/lowlight-patterns",
+    "dependencies": {
+        "lodash": "^4.17.21",
+        "memoize-one": "^6.0.0",
+        "zod": "^3.20.2"
+    }
 }
