@@ -1,0 +1,21 @@
+{
+    "[json]": {
+        "lowlight-patterns.rules": [
+            {
+                "startRule": ".*\\$schema.*",
+                "endRule": "",
+                "opacity": "max"
+            }
+        ]
+    },
+    "[go]": {
+        "lowlight-patterns.rules": [
+            {
+                "rule": "err != nil",
+                "opacity": "max"
+            }
+        ]
+    },
+    "lowlight-patterns.opacity": 0.3,
+    "lowlight-patterns.maxNumberOfLinesToScan": 1000
+}
