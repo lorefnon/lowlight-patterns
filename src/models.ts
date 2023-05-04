@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 
 export enum Opacity {
-    Max = 1,
-    Mid,
-    Min,
+    Max = "max",
+    Mid = "mid",
+    Min = "min",
 }
 
 export interface MultilineRule {

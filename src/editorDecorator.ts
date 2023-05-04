@@ -91,10 +91,13 @@ export class EditorDecorator {
         switch (rule.opacity) {
             case models.Opacity.Max:
                 queues.max.push(match);
+                break;
             case models.Opacity.Mid:
                 queues.mid.push(match);
+                break;
             case models.Opacity.Min:
                 queues.min.push(match);
+                break;
         }
     }
 
