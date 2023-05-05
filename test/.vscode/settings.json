@@ -4,25 +4,23 @@
             {
                 "startRule": ".*\\$schema.*",
                 "endRule": "}",
-                "opacity": "max"
+                "opacity": "mid"
             }
         ]
     },
     "[go]": {
         "lowlight-patterns.rules": [
             {
-                "rule": "err != nil",
-                "opacity": "max"
+                "startRule": "if err != nil",
+                "endRule": "}",
+                // "endRule": "t.Error",
+                "opacity": "min",
+                "maxLinesBetween": 20,
+                "sameScope": true
             }
-        ]
+        ],
+        "lowlight-patterns.maxNumberOfLinesToScan": 500
     },
-    "lowlight-patterns.rules": [
-        {
-            "rule": "err != nil",
-            "opacity": "mid"
-        }
-    ],
     "lowlight-patterns.opacity": "mid",
-    "lowlight-patterns.midOpacity": 0.5,
     "lowlight-patterns.maxNumberOfLinesToScan": 1000
 }

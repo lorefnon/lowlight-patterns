@@ -21,8 +21,8 @@ export class EditorDecorator {
         });
     }
 
-    _getMatchInLine(lineContent: vscode.TextLine, regexp: RegExp): vscode.Range | undefined {
-        const matches = [...lineContent.text.matchAll(regexp)];
+    _getMatchInLine(lineContentInRange: string, regexp: RegExp): vscode.Range | undefined {
+        const matches = [...lineContentInRange.matchAll(regexp)];
         if (matches.length == 0) return undefined;
         const match = matches[0];
         if (match.index == undefined || match.length == undefined) return undefined;
@@ -31,35 +31,116 @@ export class EditorDecorator {
         return new vscode.Range(start, end);
     }
 
-    _scanRangeForRegex(editor: vscode.TextEditor, range: vscode.Range, regex: RegExp): vscode.Range | undefined {
-        for (let line = range.start.line; line <= range.end.line; line++) {
-            var lineContent;
-            try {
-                lineContent = editor.document.lineAt(line);
-            } catch (e: any) {
-                this._logger.appendLine(`Failed to get line: ${line}: ${e.message}`);
-                continue;
-            }
-            const foundPos = this._getMatchInLine(lineContent, regex);
+    _scanRangeForSinglelineRule(
+        editor: vscode.TextEditor,
+        range: vscode.Range,
+        regex: RegExp
+    ): vscode.Range | undefined {
+        const firstLine = range.start.line;
+        const lastLine = range.end.line;
+        for (let line = firstLine; line <= lastLine; line++) {
+            var lineContent = utilities.lineAt(editor, line);
+            if (lineContent === undefined) continue;
+
+            var lineContentInRange = lineContent.text;
+            if (line === firstLine) lineContentInRange = lineContentInRange.substring(range.start.character);
+            if (line === lastLine) lineContentInRange = lineContentInRange.substring(0, range.end.character);
+
+            const foundPos = this._getMatchInLine(lineContentInRange, regex);
             if (foundPos) return utilities.changeLineInRange(foundPos, line);
         }
         return undefined;
     }
 
-    _scanRangeForRule(editor: vscode.TextEditor, range: vscode.Range, rule: models.Rule): vscode.Range | undefined {
-        if ("rule" in rule) {
-            const match = this._scanRangeForRegex(editor, range, rule["rule"]);
-            return match;
-        } else if ("startRule" in rule && "endRule" in rule) {
-            const startMatch = this._scanRangeForRegex(editor, range, rule["startRule"]);
-            if (startMatch === undefined) return undefined;
-            const remainingRange = utilities.getRemainingRangeInRange(range, startMatch);
-            if (remainingRange === undefined) return undefined;
-            const endMatch = this._scanRangeForRegex(editor, remainingRange, rule["endRule"]);
-            if (endMatch === undefined) return undefined;
-            return utilities.connectTwoRanges(startMatch, endMatch);
+    /**
+     * first return value is the character index that is visited before exit main scope
+     * second return value is the last scopeLevel
+     */
+    _checkScopeElevation(lineContent: string, scopeLevel: number): [number | undefined, number] {
+        // 1st capture group is in:  { [ (
+        // 2nd capture group is out: } ] )
+        const scopeChangePattern = /([\(|\[|\{]{1})|([\}|\]|\)]{1})/g;
+        const scopeChanges = [...lineContent.matchAll(scopeChangePattern)];
+        for (const scopeChange of scopeChanges) {
+            if (1 in scopeChange && scopeChange[1] !== undefined) scopeLevel++;
+            else if (2 in scopeChange && scopeChange[2] !== undefined) scopeLevel--;
+            if (scopeLevel < 0) return [scopeChange.index, scopeLevel];
         }
-        return undefined;
+        return [undefined, scopeLevel];
+    }
+
+    _restrictRangeToScope(
+        editor: vscode.TextEditor,
+        range: vscode.Range,
+        startMatch: vscode.Range
+    ): vscode.Range | undefined {
+        const startLine = utilities.lineAt(editor, startMatch.end.line);
+        if (startLine === undefined) return undefined;
+        const startLineClipped = startLine.text.substring(startMatch.end.character);
+        var [scopeEndChar, scopeElevation] = this._checkScopeElevation(startLineClipped, 0);
+        if (scopeEndChar !== undefined) return new vscode.Range(startMatch.end, new vscode.Position(0, scopeEndChar));
+
+        var totalScopeElevation = scopeElevation;
+        for (var line = range.start.line + 1; line < range.end.line; line++) {
+            const lineContent = utilities.lineAt(editor, line);
+            if (lineContent === undefined) return range;
+            [scopeEndChar, scopeElevation] = this._checkScopeElevation(lineContent.text, totalScopeElevation);
+            if (scopeEndChar !== undefined)
+                return new vscode.Range(startMatch.end, new vscode.Position(line, scopeEndChar));
+            totalScopeElevation = scopeElevation;
+        }
+
+        return range;
+    }
+
+    _restrictRange(
+        editor: vscode.TextEditor,
+        range: vscode.Range,
+        maxLinesBetween: number,
+        startMatch: vscode.Range
+    ): vscode.Range {
+        var restrictedRangeWithLinesBetween = utilities.getRemainingRangeInRange(range, startMatch, maxLinesBetween);
+        if (restrictedRangeWithLinesBetween === undefined) return range;
+
+        const restrictedRangeWithScope = this._restrictRangeToScope(
+            editor,
+            restrictedRangeWithLinesBetween,
+            startMatch
+        );
+        if (restrictedRangeWithScope === undefined) return restrictedRangeWithLinesBetween;
+
+        return restrictedRangeWithScope;
+    }
+
+    _scanRangeForMultilineRule(
+        editor: vscode.TextEditor,
+        range: vscode.Range,
+        rule: models.MultilineRule
+    ): vscode.Range | undefined {
+        const startMatch = this._scanRangeForSinglelineRule(editor, range, rule["startRule"]);
+        if (startMatch === undefined) return undefined;
+        var restrictedRange = this._restrictRange(editor, range, rule.maxLinesBetween, startMatch);
+        const endMatch = this._scanRangeForSinglelineRule(editor, restrictedRange, rule["endRule"]);
+        if (endMatch === undefined) return undefined;
+        return utilities.connectTwoRanges(startMatch, endMatch);
+    }
+
+    _scanRangeForRule(editor: vscode.TextEditor, range: vscode.Range, rule: models.Rule): vscode.Range[] {
+        var matches: vscode.Range[] = [];
+        var match: vscode.Range | undefined;
+        while (true) {
+            match = undefined;
+            if ("rule" in rule) {
+                match = this._scanRangeForSinglelineRule(editor, range, rule["rule"]);
+            } else if ("startRule" in rule && "endRule" in rule) {
+                match = this._scanRangeForMultilineRule(editor, range, rule);
+            }
+            if (match === undefined) return matches;
+            else {
+                matches.push(match);
+                range = new vscode.Range(match.end, range.end);
+            }
+        }
     }
 
     _prepareDecorationTypes(config: models.Config): models.DecorationTypes {
@@ -101,7 +182,7 @@ export class EditorDecorator {
         }
     }
 
-    _disposeLastDecorations(editor: vscode.TextEditor) {
+    disposeLastDecorations(editor: vscode.TextEditor) {
         const decoTypes = this._decorationTypeMapping.get(editor);
         if (decoTypes == undefined) return;
         decoTypes.max.dispose();
@@ -123,21 +204,19 @@ export class EditorDecorator {
         const config = models.readConfig(editor);
         if (config == undefined || config.rules == undefined) return;
 
-        console.log(config);
-
         const ranges = this._getAllVisibleRanges(editor, config);
         const perDecoQueues = this._getPerDecorationTypeQueue();
         for (const rule of config.rules) {
             for (const range of ranges) {
-                const match = this._scanRangeForRule(editor, range, rule);
-                if (match == undefined) continue;
-                this._saveMatchToQueue(perDecoQueues, match, rule);
+                const matches = this._scanRangeForRule(editor, range, rule);
+                for (const match of matches) this._saveMatchToQueue(perDecoQueues, match, rule);
             }
         }
 
-        this._disposeLastDecorations(editor);
+        this.disposeLastDecorations(editor);
         this._applyNewDecorations(editor, config, perDecoQueues);
 
         this._logger.appendLine("Applied all decorations");
+        console.log("finish all decorations");
     }
 }

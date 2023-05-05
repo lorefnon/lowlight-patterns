@@ -21,4 +21,8 @@ export function activate(context: vscode.ExtensionContext) {
     }
 }
 
-export function deactivate() {}
+export function deactivate() {
+    for (const editor of vscode.window.visibleTextEditors) {
+        editorDecorator.disposeLastDecorations(editor);
+    }
+}

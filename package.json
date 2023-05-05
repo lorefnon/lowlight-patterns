@@ -45,6 +45,15 @@
                                             "mid",
                                             "max"
                                         ]
+                                    },
+                                    "maxLinesBetween": {
+                                        "type": "number",
+                                        "default": 5
+                                    },
+                                    "sameScope": {
+                                        "type": "boolean",
+                                        "description": "Matched strings with startRule and endRule should be in same scope. If the scope of startRule matched text ends before endRule matches or maxLinesBetween exceeds, the search for this rule will be ended.",
+                                        "default": true
                                     }
                                 },
                                 "required": [
@@ -100,13 +109,22 @@
                         "max"
                     ],
                     "default": "mid",
-                    "description": "Actual opacity value for max opacity rules"
+                    "description": "The default opacity will be assumed for rules that doesn't specify"
                 },
                 "lowlight-patterns.maxNumberOfLinesToScan": {
                     "type": "number",
                     "default": 1000,
                     "scope": "language-overridable",
                     "description": "Only the first n lines will be searched for matches. Exceeding will be ignored."
+                },
+                "lowlight-patterns.maxLinesBetween": {
+                    "type": "number",
+                    "default": 5
+                },
+                "lowlight-patterns.sameScope": {
+                    "type": "boolean",
+                    "description": "Matched strings with startRule and endRule should be in same scope. If the scope of startRule matched text ends before endRule matches or maxLinesBetween exceeds, the search for this rule will be ended.",
+                    "default": "true"
                 }
             }
         }

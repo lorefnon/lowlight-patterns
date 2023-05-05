@@ -7,11 +7,17 @@ export function changeLineInRange(src: vscode.Range, line: number): vscode.Range
     );
 }
 
-export function getRemainingRangeInRange(whole: vscode.Range, scanned: vscode.Range): vscode.Range | undefined {
+export function getRemainingRangeInRange(
+    whole: vscode.Range,
+    scanned: vscode.Range,
+    maxLinesBetween: number
+): vscode.Range | undefined {
     if (!(whole.end.line - scanned.end.line > 1)) return undefined;
+    if (maxLinesBetween === 0) return undefined;
+    const start = scanned.end.line + 1;
     return new vscode.Range(
-        new vscode.Position(scanned.end.line + 1, scanned.end.character),
-        new vscode.Position(whole.end.line, whole.end.character)
+        new vscode.Position(start, scanned.end.character),
+        new vscode.Position(Math.min(whole.end.line, start + maxLinesBetween), whole.end.character)
     );
 }
 
@@ -20,4 +26,12 @@ export function connectTwoRanges(start: vscode.Range, end: vscode.Range): vscode
         new vscode.Position(start.start.line, start.start.character),
         new vscode.Position(end.end.line, end.end.character)
     );
+}
+
+export function lineAt(editor: vscode.TextEditor, line: number): vscode.TextLine | undefined {
+    try {
+        return editor.document.lineAt(line);
+    } catch (e: any) {
+        return undefined;
+    }
 }
